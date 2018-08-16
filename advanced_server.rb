@@ -1,57 +1,60 @@
 require 'sinatra'
 require 'octokit'
 require 'json'
-require 'openssl'
-require 'jwt'
-require 'time' # This is necessary to get the ISO 8601 representation of a Time object
+require 'openssl' # Used to verify the webhook signature
+require 'jwt'     # Used to authenticate a GitHub App
+require 'time'    # Used to get ISO 8601 representation of a Time object
 require 'logger'
 
 set :port, 3000
 
-#
-#
-# This is template code to create a GitHub App server. You can read more about GitHub Apps here:
-# https://developer.github.com/apps/
+
+# This is template code to create a GitHub App server.
+# You can read more about GitHub Apps here: # https://developer.github.com/apps/
 #
 # On its own, this app does absolutely nothing, except that it can be installed.
 # It's up to you to add fun functionality!
 # You can check out one example in advanced_server.rb.
 #
-# This code is a Sinatra app, for two reasons.
-# First, because the app will require a landing page for installation.
-# Second, in anticipation that you will want to receive events over a webhook from GitHub, and respond to those
-# in some way. Of course, not all apps need to receive and process events! Feel free to rip out the event handling
-# code if you don't need it.
+# This code is a Sinatra app, for two reasons:
+#   1. Because the app will require a landing page for installation.
+#   2. To easily handle webhook events.
 #
-# Have fun! Please reach out to us if you have any questions, or just to show off what you've built!
+#
+# Of course, not all apps need to receive and process events!
+# Feel free to rip out the event handling code if you don't need it.
+#
+# Have fun!
 #
 
 class GHAapp < Sinatra::Application
 
-  # Never, ever, hardcode app tokens or other secrets in your code!
-  # Always extract from a runtime source, like an environment variable.
+  # !!! DO NOT EVER USE HARD-CODED VALUES IN A REAL APP !!!
+  # Instead, set and read app tokens or other secrets in your code
+  # in a runtime source, like an environment variable like below
 
-  # Notice that the private key must be in PEM format, but the newlines should be stripped and replaced with
-  # the literal `\n`. This can be done in the terminal as such:
-  # export GITHUB_PRIVATE_KEY=`awk '{printf "%s\\n", $0}' private-key.pem`
-  PRIVATE_KEY = OpenSSL::PKey::RSA.new(ENV['GITHUB_PRIVATE_KEY'].gsub('\n', "\n")) # convert newlines
+  # Expects that the private key has been set as an environment variable in
+  # PEM format using the following command to replace newlines with the
+  # literal `\n`:
+  #   export GITHUB_PRIVATE_KEY=`awk '{printf "%s\\n", $0}' private-key.pem`
+  #
+  # Converts the newlines
+  PRIVATE_KEY = OpenSSL::PKey::RSA.new(ENV['GITHUB_PRIVATE_KEY'].gsub('\n', "\n"))
 
-  # You set the webhook secret when you create your app. This verifies that the webhook is really coming from GH.
+  # Your registered app must have a secret set. The secret is used to verify
+  # that webhooks are sent by GitHub.
   WEBHOOK_SECRET = ENV['GITHUB_WEBHOOK_SECRET']
 
-  # Get the app identifier—an integer—from your app page after you create your app. This isn't actually a secret,
-  # but it is something easier to configure at runtime.
+  # The GitHub App's identifier (type integer) set when registering an app.
   APP_IDENTIFIER = ENV['GITHUB_APP_IDENTIFIER']
 
-  # Let's turn on Sinatra's verbose logging during development
+  # Turn on Sinatra's verbose logging during development
   configure :development do
     set :logging, Logger::DEBUG
   end
 
 
-  ########## Before each request to our app
-  #
-  #
+  # Before each request to the `/event_handler` route
   before '/event_handler' do
     get_payload_request(request)
     verify_webhook_signature
@@ -230,10 +233,13 @@ class GHAapp < Sinatra::Application
       Dir.chdir(pwd)
     end
 
+    # Saves the raw payload and converts the payload to JSON format
     def get_payload_request(request)
       # request.body is an IO or StringIO object
-      request.body.rewind  # Rewind in case someone already read it
-      @payload_raw = request.body.read # We need the raw text of the body to check the webhook signature
+      # Rewind in case someone already read it
+      request.body.rewind
+      # The raw text of the body is required for webhook signature verification
+      @payload_raw = request.body.read
       begin
         @payload = JSON.parse @payload_raw
       rescue => e
@@ -241,22 +247,20 @@ class GHAapp < Sinatra::Application
       end
     end
 
-    # Before our app can use the API, we'll need to instantiate an Octokit client.
-    # Doing so requires that we construct a JWT (https://jwt.io/introduction/)
-    # We also have to sign that JWT with our private key, so GitHub can be sure
-    # that it came from us and hasn't been altered by a malicious third party
+    # Instantiate an Octokit client authenticated as a GitHub App.
+    # GitHub App authentication equires that we construct a
+    # JWT (https://jwt.io/introduction/) signed with the app's private key,
+    # so GitHub can be sure that it came from the app an not altererd by
+    # a malicious third party.
     def authenticate_app
       payload = {
           # The time that this JWT was issued, _i.e._ now.
           iat: Time.now.to_i,
 
-          # How long is the JWT good for (in seconds)?
-          # Let's say it can be used for 10 minutes before it needs to be refreshed.
-          # TODO we don't actually cache this token, we regenerate a new one every time!
+          # JWT expiration time (10 minute maximum)
           exp: Time.now.to_i + (10 * 60),
 
-          # Your GitHub App's identifier number, so GitHub knows who issued the JWT, and know what permissions
-          # this token has.
+          # Your GitHub App's identifier number
           iss: APP_IDENTIFIER
       }
 
@@ -264,27 +268,28 @@ class GHAapp < Sinatra::Application
       jwt = JWT.encode(payload, PRIVATE_KEY, 'RS256')
 
       # Create the Octokit client, using the JWT as the auth token.
-      # Notice that this client will _not_ have sufficient permissions to do many interesting things!
-      # We might, for particular endpoints, need to generate an installation token (using the JWT), and instantiate
-      # a new client object. But we'll cross that bridge when/if we get there!
       @app_client ||= Octokit::Client.new(bearer_token: jwt)
     end
 
-    # Authenticate each installation of the app in order to run API operations
+    # Instantiate an Octokit client authenticated as an installation of a
+    # GitHub App to run API operations.
     def authenticate_installation(payload)
       installation_id = payload['installation']['id']
-      @installation_token = @app_client.create_app_installation_access_token(installation_id)[:token]
-      @installation_client = Octokit::Client.new(bearer_token: @installation_token)
+      installation_token = @app_client.create_app_installation_access_token(installation_id)[:token]
+      @installation_client = Octokit::Client.new(bearer_token: installation_token)
     end
 
-    # Check X-Hub-Signature to confirm that this webhook was generated by GitHub, and not a malicious third party.
-    # The way this works is: We have registered with GitHub a secret, and we have stored it locally in WEBHOOK_SECRET.
-    # GitHub will cryptographically sign the request payload with this secret. We will do the same, and if the results
-    # match, then we know that the request is from GitHub (or, at least, from someone who knows the secret!)
-    # If they don't match, this request is an attack, and we should reject it.
-    # The signature comes in with header x-hub-signature, and looks like "sha1=123456"
-    # We should take the left hand side as the signature method, and the right hand side as the
-    # HMAC digest (the signature) itself.
+    # Check X-Hub-Signature to confirm that this webhook was generated by
+    # GitHub, and not a malicious third party.
+    #
+    # GitHub will the WEBHOOK_SECRET, registered
+    # to the GitHub App, to create a hash signature sent in each webhook payload
+    # in the `X-HUB-Signature` header. This code computes the expected hash
+    # signature and compares it to the signature sent in the `X-HUB-Signature`
+    # header. If they don't match, this request is an attack, and we should
+    # reject it. GitHub uses the HMAC hexdigest to compute the signature. The
+    # `X-HUB-Signature` looks something like this: "sha1=123456"
+    # See https://developer.github.com/webhooks/securing/ for details
     def verify_webhook_signature
       their_signature_header = request.env['HTTP_X_HUB_SIGNATURE'] || 'sha1='
       method, their_digest = their_signature_header.split('=')
@@ -294,7 +299,7 @@ class GHAapp < Sinatra::Application
       # The X-GITHUB-EVENT header provides the name of the event.
       # The action value indicates the which action triggered the event.
       logger.debug "---- recevied event #{request.env['HTTP_X_GITHUB_EVENT']}"
-      logger.debug "----         action #{@payload['action']}" unless @payload['action'].nil?
+      logger.debug "----    action #{@payload['action']}" unless @payload['action'].nil?
     end
 
   end
