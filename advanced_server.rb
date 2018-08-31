@@ -1,5 +1,7 @@
 require 'sinatra'
 require 'octokit'
+require 'dotenv/load'
+require 'git'
 require 'json'
 require 'openssl' # Used to verify the webhook signature
 require 'jwt'     # Used to authenticate a GitHub App
@@ -7,6 +9,7 @@ require 'time'    # Used to get ISO 8601 representation of a Time object
 require 'logger'
 
 set :port, 3000
+set :bind, '0.0.0.0'
 
 
 # This is template code to create a GitHub App server.
@@ -28,10 +31,6 @@ set :port, 3000
 #
 
 class GHAapp < Sinatra::Application
-
-  # !!! DO NOT EVER USE HARD-CODED VALUES IN A REAL APP !!!
-  # Instead, set and read app tokens or other secrets in your code
-  # in a runtime source, like an environment variable like below
 
   # Expects that the private key has been set as an environment variable in
   # PEM format using the following command to replace newlines with the
@@ -90,6 +89,7 @@ class GHAapp < Sinatra::Application
         end
       end
     end
+    status 200
   end
 
 
@@ -140,7 +140,7 @@ class GHAapp < Sinatra::Application
 
       clone_repository(full_repo_name, repository, head_sha)
 
-      @report = `rubocop '#{repository}/*' --format json` # --auto-correct`
+      @report = `rubocop '#{repository}/*' --format json`
       `rm -rf #{repository}`
       @output = JSON.parse @report
       annotations = []
@@ -151,8 +151,7 @@ class GHAapp < Sinatra::Application
         conclusion = 'neutral'
         @output["files"].each do |file|
           file_path = file["path"].gsub(/#{repository}\//,'')
-          blob_href = "#{repository_url}/blob/#{head_sha}/#{file_path}"
-          warning_level = 'notice'
+          annotation_level = 'notice'
           file["offenses"].each do |offense|
             start_line   = offense["location"]["start_line"]
             end_line     = offense["location"]["last_line"]
@@ -160,21 +159,20 @@ class GHAapp < Sinatra::Application
             end_column   = offense["location"]["last_column"]
             message      = offense["message"]
             annotation = {
-              "filename" => file_path,
-              "blob_href" => blob_href,
-              "start_line" => start_line,
-              "end_line" => end_line,
-              "start_column" => start_column,
-              "end_column" => end_column,
-              "warning_level" => warning_level,
-              "message" => message
+              path: file_path,
+              start_line: start_line,
+              end_line: end_line,
+              start_column: start_column,
+              end_column: end_column,
+              annotation_level: annotation_level,
+              message: message
             }
             annotations.push(annotation)
           end
         end
       end
 
-      summary = "Octoc Rubocop summary\n-Offense count: #{@output["summary"]["offense_count"]}\n-File count: #{@output["summary"]["target_file_count"]}\n-Target file count: #{@output["summary"]["inspected_file_count"]}}"
+      summary = "Octoc Rubocop summary\n-Offense count: #{@output["summary"]["offense_count"]}\n-File count: #{@output["summary"]["target_file_count"]}\n-Target file count: #{@output["summary"]["inspected_file_count"]}"
       details = "Octoc Rubocop version: #{@output["metadata"]["rubocop_version"]}"
 
       # Now, mark the check run as complete! And if there are warnings, share them
@@ -187,7 +185,7 @@ class GHAapp < Sinatra::Application
           output: {
             title: "Octoc Rubocop",
             summary: summary,
-            details: details,
+            text: details,
             annotations: annotations
           },
           actions: [{
@@ -212,23 +210,23 @@ class GHAapp < Sinatra::Application
         @report = `rubocop '#{repository}/*' --format json --auto-correct`
         pwd = Dir.getwd()
         Dir.chdir(repository)
-        `git add .`
-        `git commit -am 'Automatically fix Octo Rubocop notices.'`
-        `git push 'https://github.com/#{full_repo_name}.git' #{head_branch}`
+        @git.add(:all => true)
+        @git.commit_all('Automatically fix Octo Rubocop notices.')
+        @git.push("https://github.com/#{full_repo_name}.git", head_branch)
         Dir.chdir(pwd)
         `rm -rf #{repository}`
       end
     end
 
     def clone_repository(full_repo_name, repository, head_sha, head_branch=nil)
-      `git clone 'https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git'`
+      @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
       pwd = Dir.getwd()
       Dir.chdir(repository)
-      `git pull`
+      @git.pull
       if(head_branch.nil?)
-        `git checkout '#{head_sha}'`
+        @git.checkout(head_sha)
       else
-        `git checkout '#{head_branch}'`
+        @git.checkout(head_branch)
       end
       Dir.chdir(pwd)
     end
@@ -275,8 +273,8 @@ class GHAapp < Sinatra::Application
     # GitHub App to run API operations.
     def authenticate_installation(payload)
       installation_id = payload['installation']['id']
-      installation_token = @app_client.create_app_installation_access_token(installation_id)[:token]
-      @installation_client = Octokit::Client.new(bearer_token: installation_token)
+      @installation_token = @app_client.create_app_installation_access_token(installation_id)[:token]
+      @installation_client = Octokit::Client.new(bearer_token: @installation_token)
     end
 
     # Check X-Hub-Signature to confirm that this webhook was generated by

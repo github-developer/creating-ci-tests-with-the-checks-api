@@ -1,5 +1,7 @@
 require 'sinatra'
 require 'octokit'
+require 'dotenv/load'
+require 'git'
 require 'json'
 require 'openssl' # Used to verify the webhook signature
 require 'jwt'     # Used to authenticate a GitHub App
@@ -7,6 +9,7 @@ require 'time'    # Used to get ISO 8601 representation of a Time object
 require 'logger'
 
 set :port, 3000
+set :bind, '0.0.0.0'
 
 
 # This is template code to create a GitHub App server.
@@ -28,10 +31,6 @@ set :port, 3000
 #
 
 class GHAapp < Sinatra::Application
-
-  # !!! DO NOT EVER USE HARD-CODED VALUES IN A REAL APP !!!
-  # Instead, set and read app tokens or other secrets in your code
-  # in a runtime source, like an environment variable like below
 
   # Expects that the private key has been set as an environment variable in
   # PEM format using the following command to replace newlines with the
