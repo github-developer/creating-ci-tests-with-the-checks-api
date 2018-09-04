@@ -56,7 +56,7 @@ class GHAapp < Sinatra::Application
   # Before each request to the `/event_handler` route
   before '/event_handler' do
     get_payload_request(request)
-    verify_webhook_signature
+    verify_webhook_signature!
     authenticate_app
     # Authenticate each installation of the app in order to run API operations
     authenticate_installation(@payload)
@@ -295,7 +295,7 @@ class GHAapp < Sinatra::Application
     # reject it. GitHub uses the HMAC hexdigest to compute the signature. The
     # `X-HUB-Signature` looks something like this: "sha1=123456"
     # See https://developer.github.com/webhooks/securing/ for details
-    def verify_webhook_signature
+    def verify_webhook_signature!
       their_signature_header = request.env['HTTP_X_HUB_SIGNATURE'] || 'sha1='
       method, their_digest = their_signature_header.split('=')
       our_digest = OpenSSL::HMAC.hexdigest(method, WEBHOOK_SECRET, @payload_raw)
