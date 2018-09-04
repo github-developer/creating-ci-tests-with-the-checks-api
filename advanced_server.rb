@@ -60,6 +60,13 @@ class GHAapp < Sinatra::Application
     authenticate_app
     # Authenticate each installation of the app in order to run API operations
     authenticate_installation(@payload)
+
+
+    # For security reasons, we should validate some of the parameters passed to us, as we will be using some of them with command line utilities
+    # We really don't want to accidentally delete ./* or run arbitrary commands!
+
+    # Validate that, if present, that the repository name consists only of latin alphabetic characters, `-`, and `_`
+    halt 400 if (@payload['repository']['name'] =~ /[0-9A-Za-z\-\_]+/).nil? unless @payload['repository'].nil?
   end
 
 
