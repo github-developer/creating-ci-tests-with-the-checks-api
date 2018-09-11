@@ -217,15 +217,20 @@ class GHAapp < Sinatra::Application
         @report = `rubocop '#{repository}/*' --format json --auto-correct`
         pwd = Dir.getwd()
         Dir.chdir(repository)
-        @git.add(:all => true)
-        @git.commit_all('Automatically fix Octo Rubocop notices.')
-        @git.push("https://github.com/#{full_repo_name}.git", head_branch)
+        begin
+          @git.commit_all('Automatically fix Octo Rubocop notices.')
+          @git.push("https://github.com/#{full_repo_name}.git", head_branch)
+        rescue
+          # Nothing to commit!
+          puts "Nothing to commit"
+        end
         Dir.chdir(pwd)
         `rm -rf #{repository}`
       end
     end
 
     def clone_repository(full_repo_name, repository, head_sha, head_branch=nil)
+      print  "https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git\n"
       @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
       pwd = Dir.getwd()
       Dir.chdir(repository)
