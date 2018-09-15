@@ -62,8 +62,9 @@ class GHAapp < Sinatra::Application
     authenticate_installation(@payload)
 
 
-    # For security reasons, we should validate some of the parameters passed to us, as we will be using some of them with command line utilities
-    # We really don't want to accidentally delete ./* or run arbitrary commands!
+    # For security reasons, you should validate some of the parameters in the
+    # webhook, as you will be using some of them with command line utilities
+    # You really don't want to accidentally delete ./* or run arbitrary commands!
 
     # Validate that, if present, that the repository name consists only of latin alphabetic characters, `-`, and `_`
     halt 400 if (@payload['repository']['name'] =~ /[0-9A-Za-z\-\_]+/).nil? unless @payload['repository'].nil?
@@ -82,9 +83,9 @@ class GHAapp < Sinatra::Application
 
     when 'check_run'
       # GH confirms our new check_run has been created, or rerequested. Update it to "completed"
-      # Notice that we get notifications of the check runs created by _other_ systems than ours!
-      # We need to be selective, hence the conditional on the app id. We only want to process our _own_
-      # check runs. That's why we check if the app id is == APP_IDENTIFIER
+      # Notice that you get notifications of the check runs created by _other_ systems than ours!
+      # You need to be selective, hence the conditional on the app id. You only want to process our _own_
+      # check runs. That's why you check if the app id is == APP_IDENTIFIER
       if @payload['check_run']['app']['id'].to_s === APP_IDENTIFIER
         case @payload['action']
         when 'created'
@@ -104,29 +105,29 @@ class GHAapp < Sinatra::Application
 
     # Create a new check run
     def create_check_run
-      # Octokit doesn't yet support the checks API, but it does provide generic HTTP methods we can use!
+      # Octokit doesn't yet support the checks API, but it does provide generic HTTP methods you can use!
       # https://developer.github.com/v3/checks/runs/#create-a-check-run
       check_run = @installation_client.post("repos/#{@payload['repository']['full_name']}/check-runs", {
           accept: 'application/vnd.github.antiope-preview+json', # This header allows for beta access to Checks API
           name: 'Octo Rubocop',
-          # The information we need should probably be pulled from persistent storage, but we can
+          # The information you need should probably be pulled from persistent storage, but you can
           # use the event that triggered the run creation. However, the structure differs depending on whether
           # it was a check run or a check suite event that trigged this call.
           head_sha: @payload['check_run'].nil? ? @payload['check_suite']['head_sha'] : @payload['check_run']['head_sha']
       })
 
-      # We've now requested the creation of a check run from GitHub. We will wait until we get a confirmation
+      # You've now requested the creation of a check run from GitHub. You will wait until you get a confirmation
       # from GitHub, and then kick off our CI process from there.
     end
 
     # Start the CI process
     def initiate_check_run
       # This method is called in response to GitHub acknowledging our request to create a check run.
-      # We'll first update the check run to "in progress"
-      # Then we'll run our CI process
-      # Then we'll update the check run to "completed" with the CI results.
+      # You'll first update the check run to "in progress"
+      # Then you'll run our CI process
+      # Then you'll update the check run to "completed" with the CI results.
 
-      # Octokit doesn't yet support the Checks API, but it does provide generic HTTP methods we can use!
+      # Octokit doesn't yet support the Checks API, but it does provide generic HTTP methods you can use!
       # https://developer.github.com/v3/checks/runs/#update-a-check-run
       # notice the verb! PATCH!
       updated_check_run = @installation_client.patch("repos/#{@payload['repository']['full_name']}/check-runs/#{@payload['check_run']['id']}", {
@@ -137,8 +138,8 @@ class GHAapp < Sinatra::Application
       })
 
       # ***** RUN A CI TEST *****
-      # This is where we would kick off our CI process. Ideally this would be performed async, so we could
-      # return immediately. But for now we'll do a simulated CI process syncronously, and update the check run right here..
+      # This is where you would kick off our CI process. Ideally this would be performed async, so you could
+      # return immediately. But for now you'll do a simulated CI process syncronously, and update the check run right here..
 
       full_repo_name = @payload['repository']['full_name']
       repository     = @payload['repository']['name']
@@ -179,8 +180,8 @@ class GHAapp < Sinatra::Application
         end
       end
 
-      summary = "Octoc Rubocop summary\n-Offense count: #{@output["summary"]["offense_count"]}\n-File count: #{@output["summary"]["target_file_count"]}\n-Target file count: #{@output["summary"]["inspected_file_count"]}"
-      details = "Octoc Rubocop version: #{@output["metadata"]["rubocop_version"]}"
+      summary = "Octo Rubocop summary\n-Offense count: #{@output["summary"]["offense_count"]}\n-File count: #{@output["summary"]["target_file_count"]}\n-Target file count: #{@output["summary"]["inspected_file_count"]}"
+      details = "Octo Rubocop version: #{@output["metadata"]["rubocop_version"]}"
 
       # Now, mark the check run as complete! And if there are warnings, share them
       updated_check_run = @installation_client.patch("repos/#{@payload['repository']['full_name']}/check-runs/#{@payload['check_run']['id']}", {
@@ -190,7 +191,7 @@ class GHAapp < Sinatra::Application
           conclusion: conclusion,
           completed_at: Time.now.utc.iso8601,
           output: {
-            title: "Octoc Rubocop",
+            title: "Octo Rubocop",
             summary: summary,
             text: details,
             annotations: annotations
@@ -253,7 +254,7 @@ class GHAapp < Sinatra::Application
     end
 
     # Instantiate an Octokit client authenticated as a GitHub App.
-    # GitHub App authentication equires that we construct a
+    # GitHub App authentication equires that you construct a
     # JWT (https://jwt.io/introduction/) signed with the app's private key,
     # so GitHub can be sure that it came from the app an not altererd by
     # a malicious third party.
@@ -291,7 +292,7 @@ class GHAapp < Sinatra::Application
     # to the GitHub App, to create a hash signature sent in each webhook payload
     # in the `X-HUB-Signature` header. This code computes the expected hash
     # signature and compares it to the signature sent in the `X-HUB-Signature`
-    # header. If they don't match, this request is an attack, and we should
+    # header. If they don't match, this request is an attack, and you should
     # reject it. GitHub uses the HMAC hexdigest to compute the signature. The
     # `X-HUB-Signature` looks something like this: "sha1=123456"
     # See https://developer.github.com/webhooks/securing/ for details
@@ -314,6 +315,6 @@ class GHAapp < Sinatra::Application
   # Don't worry too much about this code ;) But, for the curious:
   # $0 is the executed file
   # __FILE__ is the current file
-  # If they are the same—that is, we are running this file directly, call the Sinatra run method
+  # If they are the same—that is, you are running this file directly, call the Sinatra run method
   run! if __FILE__ == $0
 end

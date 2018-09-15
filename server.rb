@@ -93,7 +93,7 @@ class GHAapp < Sinatra::Application
     end
 
     # Instantiate an Octokit client authenticated as a GitHub App.
-    # GitHub App authentication equires that we construct a
+    # GitHub App authentication requires that you construct a
     # JWT (https://jwt.io/introduction/) signed with the app's private key,
     # so GitHub can be sure that it came from the app an not altererd by
     # a malicious third party.
@@ -131,7 +131,7 @@ class GHAapp < Sinatra::Application
     # to the GitHub App, to create a hash signature sent in each webhook payload
     # in the `X-HUB-Signature` header. This code computes the expected hash
     # signature and compares it to the signature sent in the `X-HUB-Signature`
-    # header. If they don't match, this request is an attack, and we should
+    # header. If they don't match, this request is an attack, and you should
     # reject it. GitHub uses the HMAC hexdigest to compute the signature. The
     # `X-HUB-Signature` looks something like this: "sha1=123456"
     # See https://developer.github.com/webhooks/securing/ for details
@@ -154,6 +154,6 @@ class GHAapp < Sinatra::Application
   # Don't worry too much about this code ;) But, for the curious:
   # $0 is the executed file
   # __FILE__ is the current file
-  # If they are the same—that is, we are running this file directly, call the Sinatra run method
+  # If they are the same—that is, you are running this file directly, call the Sinatra run method
   run! if __FILE__ == $0
 end
