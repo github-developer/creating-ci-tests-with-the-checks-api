@@ -231,7 +231,6 @@ class GHAapp < Sinatra::Application
     end
 
     def clone_repository(full_repo_name, repository, head_sha, head_branch=nil)
-      print  "https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git\n"
       @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
       pwd = Dir.getwd()
       Dir.chdir(repository)
