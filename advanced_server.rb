@@ -57,17 +57,25 @@ class GHAapp < Sinatra::Application
   before '/event_handler' do
     get_payload_request(request)
     verify_webhook_signature!
-    authenticate_app
-    # Authenticate each installation of the app in order to run API operations
-    authenticate_installation(@payload)
 
+
+    # GH confirms our new check_run has been created, or rerequested. Update it to "completed"
+    # Notice that you get notifications of the check runs created by _other_ systems than ours!
+    # You need to be selective, hence the conditional on the app id. You only want to process our _own_
+    # check runs. That's why you check if the app id is == APP_IDENTIFIER
+
+    # Each webhook sent to a GitHub App includes the app's ID.
+    halt 400 unless @payload[request.env['HTTP_X_GITHUB_EVENT']]['app']['id'].to_s === APP_IDENTIFIER
 
     # For security reasons, you should validate some of the parameters in the
     # webhook, as you will be using some of them with command line utilities
     # You really don't want to accidentally delete ./* or run arbitrary commands!
-
     # Validate that, if present, that the repository name consists only of latin alphabetic characters, `-`, and `_`
     halt 400 if (@payload['repository']['name'] =~ /[0-9A-Za-z\-\_]+/).nil? unless @payload['repository'].nil?
+
+    authenticate_app
+    # Authenticate each installation of the app in order to run API operations
+    authenticate_installation(@payload)
   end
 
 
@@ -82,19 +90,13 @@ class GHAapp < Sinatra::Application
       end
 
     when 'check_run'
-      # GH confirms our new check_run has been created, or rerequested. Update it to "completed"
-      # Notice that you get notifications of the check runs created by _other_ systems than ours!
-      # You need to be selective, hence the conditional on the app id. You only want to process our _own_
-      # check runs. That's why you check if the app id is == APP_IDENTIFIER
-      if @payload['check_run']['app']['id'].to_s === APP_IDENTIFIER
-        case @payload['action']
-        when 'created'
-          initiate_check_run
-        when 'rerequested'
-          create_check_run
-        when 'requested_action'
-          take_requested_action
-        end
+      case @payload['action']
+      when 'created'
+        initiate_check_run
+      when 'rerequested'
+        create_check_run
+      when 'requested_action'
+        take_requested_action
       end
     end
     status 200
@@ -231,7 +233,6 @@ class GHAapp < Sinatra::Application
     end
 
     def clone_repository(full_repo_name, repository, head_sha, head_branch=nil)
-      print  "https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git\n"
       @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
       pwd = Dir.getwd()
       Dir.chdir(repository)
