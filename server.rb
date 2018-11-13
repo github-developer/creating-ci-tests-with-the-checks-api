@@ -75,7 +75,7 @@ class GHAapp < Sinatra::Application
   helpers do
 
     # # # # # # # # # # # # # # # # #
-    # ADD YOUR HELPERS METHODS HERE #
+    # ADD YOUR HELPER METHODS HERE  #
     # # # # # # # # # # # # # # # # #
 
     # Saves the raw payload and converts the payload to JSON format
