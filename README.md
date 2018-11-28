@@ -1,13 +1,21 @@
-Build this sample project by following the "[Building Your First GitHub App](https://developer.github.com/apps/building-your-first-github-app)" Quickstart guide on developer.github.com.
+This is an example GitHub App that creates a CI server that runs CI tests using the GitHub [Checks API](https://developer.github.com/v3/checks/). You can follow the "[Building a Checks API CI server](https://developer.github.com/apps/quickstart-guide/building-a-checks-api-ci-server)" Quickstart guide on developer.github.com to learn how to build the app code in `server.rb`.
 
-It consists of two different servers: `server.rb` (template GitHub App server) and `advanced_server.rb` (completed project).
+This project handles check run and check suite webhook events and uses the Octokit.rb library to make REST API calls. The CI test runs [RuboCop](https://rubocop.readthedocs.io/en/latest/) on all Ruby code in a repository and reports errors using the Checks API. This example project consists of two different servers:
+* `template_server.rb` (GitHub App template code)
+* `server.rb` (completed project)
 
-## Install and run
+To learn how to set up a template GitHub App, follow the "[Configuring a GitHub App](https://developer.github.com/apps/quickstart-guide/configuring-ast-github-app)" Quickstart guide on developer.github.com.
+
+## Install
 
 To run the code, make sure you have [Bundler](http://gembundler.com/) installed; then enter `bundle install` on the command line.
 
-- For the boilerplate project, enter `ruby server.rb` on the command line.
+## Set environment variables
 
-- For the completed project, enter `ruby advanced_server.rb` on the command line.
+1. Create a copy of the `.env-example` file called `.env`.
+2. Add your GitHub App's private key, app ID, and webhook secret, app username, and app email to the `.env` file.
 
-Both commands will run the server at `localhost:3000`.
+## Run the server
+
+1. Run `ruby template_server.rb` or `ruby server.rb` on the command line.
+1. View the default Sinatra app at `localhost:3000`.
