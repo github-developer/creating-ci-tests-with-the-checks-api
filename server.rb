@@ -41,8 +41,8 @@ class GHAapp < Sinatra::Application
     # arbitrary commands or inject false repository names. If a repository name
     # is provided in the webhook, validate that it consists only of latin
     # alphabetic characters, `-`, and `_`.
-    halt 400 if (@payload['repository']['name'] =~ /[0-9A-Za-z\-\_]+/).nil?
-      unless @payload['repository'].nil?
+    unless @payload['repository'].nil?
+      halt 400 if (@payload['repository']['name'] =~ /[0-9A-Za-z\-\_]+/).nil?
     end
 
     authenticate_app
@@ -214,8 +214,8 @@ class GHAapp < Sinatra::Application
         clone_repository(full_repo_name, repository, head_branch)
 
         # Sets your commit username and email address
-        @git.config("user.name", ENV['GITHUB_APP_USER'])
-        @git.config("user.email", ENV['GITHUB_APP_EMAIL'])
+        @git.config("user.name", ENV['GITHUB_APP_USER_NAME'])
+        @git.config("user.email", ENV['GITHUB_APP_USER_EMAIL'])
 
         # Automatically correct RuboCop style errors
         @report = `rubocop '#{repository}/*' --format json --auto-correct`
@@ -224,7 +224,7 @@ class GHAapp < Sinatra::Application
         Dir.chdir(repository)
         begin
           @git.commit_all('Automatically fix Octo RuboCop notices.')
-          @git.push("https://github.com/#{full_repo_name}.git", head_branch)
+          @git.push("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", head_branch)
         rescue
           # Nothing to commit!
           puts "Nothing to commit"
