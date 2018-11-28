@@ -91,7 +91,7 @@ class GHAapp < Sinatra::Application
         {
           # This header allows for beta access to Checks API
           accept: 'application/vnd.github.antiope-preview+json',
-          name: 'Octo Rubocop',
+          name: 'Octo RuboCop',
           # The information you need should probably be pulled from persistent
           # storage, but you can use the event that triggered the check run
           # creation. The payload structure differs depending on whether this
@@ -117,7 +117,7 @@ class GHAapp < Sinatra::Application
         "repos/#{@payload['repository']['full_name']}/check-runs/#{@payload['check_run']['id']}",
         {
           accept: 'application/vnd.github.antiope-preview+json',
-          name: 'Octo Rubocop',
+          name: 'Octo RuboCop',
           status: 'in_progress',
           started_at: Time.now.utc.iso8601
         }
@@ -133,14 +133,14 @@ class GHAapp < Sinatra::Application
 
       clone_repository(full_repo_name, repository, head_sha)
 
-      # Run Rubocop on all files in the repository
+      # Run RuboCop on all files in the repository
       @report = `rubocop '#{repository}' --format json`
       logger.debug "#{@report}"
       `rm -rf #{repository}`
       @output = JSON.parse @report
       annotations = []
 
-      # Rubocop reports the number of errors found in "offense_count"
+      # RuboCop reports the number of errors found in "offense_count"
       if @output["summary"]["offense_count"] == 0
         conclusion = 'success'
       else
@@ -175,20 +175,20 @@ class GHAapp < Sinatra::Application
       end
 
       # Updated check run summary and text parameters
-      summary = "Octo Rubocop summary\n-Offense count: #{@output["summary"]["offense_count"]}\n-File count: #{@output["summary"]["target_file_count"]}\n-Target file count: #{@output["summary"]["inspected_file_count"]}"
-      text = "Octo Rubocop version: #{@output["metadata"]["rubocop_version"]}"
+      summary = "Octo RuboCop summary\n-Offense count: #{@output["summary"]["offense_count"]}\n-File count: #{@output["summary"]["target_file_count"]}\n-Target file count: #{@output["summary"]["inspected_file_count"]}"
+      text = "Octo RuboCop version: #{@output["metadata"]["rubocop_version"]}"
 
       # Mark the check run as complete! And if there are warnings, share them.
       updated_check_run = @installation_client.patch(
         "repos/#{@payload['repository']['full_name']}/check-runs/#{@payload['check_run']['id']}",
         {
           accept: 'application/vnd.github.antiope-preview+json',
-          name: 'Octo Rubocop',
+          name: 'Octo RuboCop',
           status: 'completed',
           conclusion: conclusion,
           completed_at: Time.now.utc.iso8601,
           output: {
-            title: "Octo Rubocop",
+            title: "Octo RuboCop",
             summary: summary,
             text: text,
             annotations: annotations
@@ -217,13 +217,13 @@ class GHAapp < Sinatra::Application
         @git.config("user.name", ENV['GITHUB_APP_USER'])
         @git.config("user.email", ENV['GITHUB_APP_EMAIL'])
 
-        # Automatically correct Rubocop style errors
+        # Automatically correct RuboCop style errors
         @report = `rubocop '#{repository}/*' --format json --auto-correct`
 
         pwd = Dir.getwd()
         Dir.chdir(repository)
         begin
-          @git.commit_all('Automatically fix Octo Rubocop notices.')
+          @git.commit_all('Automatically fix Octo RuboCop notices.')
           @git.push("https://github.com/#{full_repo_name}.git", head_branch)
         rescue
           # Nothing to commit!
