@@ -133,29 +133,29 @@ class GHAapp < Sinatra::Application
 
       # Run RuboCop on all files in the repository
       @report = `rubocop '#{repository}' --format json`
-      logger.debug "#{@report}"
+      logger.debug '#{@report}'
       `rm -rf #{repository}`
       @output = JSON.parse @report
       annotations = []
 
-      # RuboCop reports the number of errors found in "offense_count"
-      if @output["summary"]["offense_count"] == 0
+      # RuboCop reports the number of errors found in 'offense_count'
+      if @output['summary']['offense_count'] == 0
         conclusion = 'success'
       else
         conclusion = 'neutral'
-        @output["files"].each do |file|
+        @output['files'].each do |file|
 
           # Only parse offenses for files in this app's repository
-          file_path = file["path"].gsub(/#{repository}\//,'')
+          file_path = file['path'].gsub(/#{repository}\//,'')
           annotation_level = 'notice'
 
           # Parse each offense to get details and location
-          file["offenses"].each do |offense|
-            start_line   = offense["location"]["start_line"]
-            end_line     = offense["location"]["last_line"]
-            start_column = offense["location"]["start_column"]
-            end_column   = offense["location"]["last_column"]
-            message      = offense["message"]
+          file['offenses'].each do |offense|
+            start_line   = offense['location']['start_line']
+            end_line     = offense['location']['last_line']
+            start_column = offense['location']['start_column']
+            end_column   = offense['location']['last_column']
+            message      = offense['message']
 
             # Create a new annotation for each error
             annotation = {
@@ -173,8 +173,8 @@ class GHAapp < Sinatra::Application
       end
 
       # Updated check run summary and text parameters
-      summary = "Octo RuboCop summary\n-Offense count: #{@output["summary"]["offense_count"]}\n-File count: #{@output["summary"]["target_file_count"]}\n-Target file count: #{@output["summary"]["inspected_file_count"]}"
-      text = "Octo RuboCop version: #{@output["metadata"]["rubocop_version"]}"
+      summary = "Octo RuboCop summary\n-Offense count: #{@output['summary']['offense_count']}\n-File count: #{@output['summary']['target_file_count']}\n-Target file count: #{@output['summary']['inspected_file_count']}"
+      text = "Octo RuboCop version: #{@output['metadata']['rubocop_version']}"
 
       # Mark the check run as complete! And if there are warnings, share them.
       updated_check_run = @installation_client.patch(
@@ -186,15 +186,15 @@ class GHAapp < Sinatra::Application
           conclusion: conclusion,
           completed_at: Time.now.utc.iso8601,
           output: {
-            title: "Octo RuboCop",
+            title: 'Octo RuboCop',
             summary: summary,
             text: text,
             annotations: annotations
           },
           actions: [{
-            label: "Fix this",
-            description: "Automatically fix all linter notices.",
-            identifier: "fix_rubocop_notices"
+            label: 'Fix this',
+            description: 'Automatically fix all linter notices.',
+            identifier: 'fix_rubocop_notices'
           }]
         }
       )
@@ -212,8 +212,8 @@ class GHAapp < Sinatra::Application
         clone_repository(full_repo_name, repository, head_branch)
 
         # Sets your commit username and email address
-        @git.config("user.name", ENV['GITHUB_APP_USER_NAME'])
-        @git.config("user.email", ENV['GITHUB_APP_USER_EMAIL'])
+        @git.config('user.name', ENV['GITHUB_APP_USER_NAME'])
+        @git.config('user.email', ENV['GITHUB_APP_USER_EMAIL'])
 
         # Automatically correct RuboCop style errors
         @report = `rubocop '#{repository}/*' --format json --auto-correct`
@@ -222,10 +222,10 @@ class GHAapp < Sinatra::Application
         Dir.chdir(repository)
         begin
           @git.commit_all('Automatically fix Octo RuboCop notices.')
-          @git.push("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", head_branch)
+          @git.push('https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git', head_branch)
         rescue
           # Nothing to commit!
-          puts "Nothing to commit"
+          puts 'Nothing to commit'
         end
         Dir.chdir(pwd)
         `rm -rf '#{repository}'`
@@ -239,7 +239,7 @@ class GHAapp < Sinatra::Application
     # repository      - The repository name
     # ref             - The branch, commit SHA, or tag to check out
     def clone_repository(full_repo_name, repository, ref)
-      @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
+      @git = Git.clone('https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git', repository)
       pwd = Dir.getwd()
       Dir.chdir(repository)
       @git.pull
@@ -257,7 +257,7 @@ class GHAapp < Sinatra::Application
       begin
         @payload = JSON.parse @payload_raw
       rescue => e
-        fail  "Invalid JSON (#{e}): #{@payload_raw}"
+        fail  'Invalid JSON (#{e}): #{@payload_raw}'
       end
     end
 
@@ -302,7 +302,7 @@ class GHAapp < Sinatra::Application
     # the signature sent in the `X-HUB-Signature` header. If they don't match,
     # this request is an attack, and you should reject it. GitHub uses the HMAC
     # hexdigest to compute the signature. The `X-HUB-Signature` looks something
-    # like this: "sha1=123456".
+    # like this: 'sha1=123456'.
     # See https://developer.github.com/webhooks/securing/ for details.
     def verify_webhook_signature
       their_signature_header = request.env['HTTP_X_HUB_SIGNATURE'] || 'sha1='
@@ -312,8 +312,8 @@ class GHAapp < Sinatra::Application
 
       # The X-GITHUB-EVENT header provides the name of the event.
       # The action value indicates the which action triggered the event.
-      logger.debug "---- received event #{request.env['HTTP_X_GITHUB_EVENT']}"
-      logger.debug "----    action #{@payload['action']}" unless @payload['action'].nil?
+      logger.debug '---- received event #{request.env['HTTP_X_GITHUB_EVENT']}'
+      logger.debug '----    action #{@payload['action']}' unless @payload['action'].nil?
     end
 
   end
