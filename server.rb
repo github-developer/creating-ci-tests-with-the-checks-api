@@ -237,7 +237,7 @@ class GHAapp < Sinatra::Application
     #
     # full_repo_name  - The owner and repo. Ex: octocat/hello-world
     # repository      - The repository name
-    # ref             - The branch, commit SHA, or tag to checkout
+    # ref             - The branch, commit SHA, or tag to check out
     def clone_repository(full_repo_name, repository, ref)
       @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
       pwd = Dir.getwd()
