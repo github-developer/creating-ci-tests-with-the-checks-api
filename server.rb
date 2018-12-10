@@ -208,7 +208,7 @@ class GHAapp < Sinatra::Application
       repository     = @payload['repository']['name']
       head_branch    = @payload['check_run']['check_suite']['head_branch']
 
-      if(@payload['requested_action']['identifier'] == 'fix_rubocop_notices')
+      if (@payload['requested_action']['identifier'] == 'fix_rubocop_notices')
         clone_repository(full_repo_name, repository, head_branch)
 
         # Sets your commit username and email address
