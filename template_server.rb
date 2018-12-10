@@ -82,7 +82,7 @@ class GHAapp < Sinatra::Application
       begin
         @payload = JSON.parse @payload_raw
       rescue => e
-        fail  "Invalid JSON (#{e}): #{@payload_raw}"
+        fail  'Invalid JSON (#{e}): #{@payload_raw}'
       end
     end
 
@@ -127,7 +127,7 @@ class GHAapp < Sinatra::Application
     # the signature sent in the `X-HUB-Signature` header. If they don't match,
     # this request is an attack, and you should reject it. GitHub uses the HMAC
     # hexdigest to compute the signature. The `X-HUB-Signature` looks something
-    # like this: "sha1=123456".
+    # like this: 'sha1=123456'.
     # See https://developer.github.com/webhooks/securing/ for details.
     def verify_webhook_signature
       their_signature_header = request.env['HTTP_X_HUB_SIGNATURE'] || 'sha1='
