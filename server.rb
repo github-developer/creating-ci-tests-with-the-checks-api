@@ -91,11 +91,9 @@ class GHAapp < Sinatra::Application
         {
           # This header allows for beta access to Checks API
           accept: 'application/vnd.github.antiope-preview+json',
+          # The name of your check run.
           name: 'Octo RuboCop',
-          # The information you need should probably be pulled from persistent
-          # storage, but you can use the event that triggered the check run
-          # creation. The payload structure differs depending on whether this
-          # event was triggered by a check run or a check suite.
+          # The payload structure differs depending on whether a check run or a check suite event occurred.
           head_sha: @payload['check_run'].nil? ? @payload['check_suite']['head_sha'] : @payload['check_run']['head_sha']
         }
       )
