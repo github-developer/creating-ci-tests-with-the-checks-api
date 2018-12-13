@@ -133,7 +133,7 @@ class GHAapp < Sinatra::Application
 
       # Run RuboCop on all files in the repository
       @report = `rubocop '#{repository}' --format json`
-      logger.debug '#{@report}'
+      logger.debug @report
       `rm -rf #{repository}`
       @output = JSON.parse @report
       annotations = []
@@ -222,7 +222,7 @@ class GHAapp < Sinatra::Application
         Dir.chdir(repository)
         begin
           @git.commit_all('Automatically fix Octo RuboCop notices.')
-          @git.push('https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git', head_branch)
+          @git.push("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", head_branch)
         rescue
           # Nothing to commit!
           puts 'Nothing to commit'
@@ -239,7 +239,7 @@ class GHAapp < Sinatra::Application
     # repository      - The repository name
     # ref             - The branch, commit SHA, or tag to check out
     def clone_repository(full_repo_name, repository, ref)
-      @git = Git.clone('https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git', repository)
+      @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
       pwd = Dir.getwd()
       Dir.chdir(repository)
       @git.pull
@@ -257,7 +257,7 @@ class GHAapp < Sinatra::Application
       begin
         @payload = JSON.parse @payload_raw
       rescue => e
-        fail  'Invalid JSON (#{e}): #{@payload_raw}'
+        fail  "Invalid JSON (#{e}): #{@payload_raw}"
       end
     end
 
