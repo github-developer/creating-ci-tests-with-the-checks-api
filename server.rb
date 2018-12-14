@@ -108,7 +108,7 @@ class GHAapp < Sinatra::Application
       # to 'in_progress' and run the CI process. When the CI finishes, you'll
       # update the check run status to 'completed' and add the CI results.
 
-      # Octokit doesn't yet support the Checks API, but it does provide generic
+      # At time of writing, Octokit doesn't support the Checks API, but it does provide generic
       # HTTP methods you can use:
       # https://developer.github.com/v3/checks/runs/#update-a-check-run
       updated_check_run = @installation_client.patch(
