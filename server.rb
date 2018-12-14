@@ -99,8 +99,9 @@ class GHAapp < Sinatra::Application
       )
 
       # You requested the creation of a check run from GitHub. Now, you'll wait
-      # to get confirmation from GitHub in form of a webhook that it was created before starting CI.
-      # Equivalently, a 201 response from POST /repos/:owner/:repo/check-runs could also be used as confirmation.
+      # to get confirmation from GitHub, in the form of a webhook, that it was 
+      # created before starting CI. Equivalently, a 201 response from 
+      # POST /repos/:owner/:repo/check-runs could also be used as confirmation.
     end
 
     # Start the CI process
