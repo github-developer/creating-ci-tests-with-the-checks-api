@@ -83,8 +83,8 @@ class GHAapp < Sinatra::Application
 
     # Create a new check run with the status queued
     def create_check_run
-      # At time of writing, Octokit does not support the Checks API, but it does provide generic
-      # HTTP methods you can use:
+      # At the time of writing, Octokit does not support the Checks API, but 
+      # it does provide generic HTTP methods you can use:
       # https://developer.github.com/v3/checks/runs/#create-a-check-run
       check_run = @installation_client.post(
         "repos/#{@payload['repository']['full_name']}/check-runs",
@@ -109,8 +109,8 @@ class GHAapp < Sinatra::Application
       # to 'in_progress' and run the CI process. When the CI finishes, you'll
       # update the check run status to 'completed' and add the CI results.
 
-      # At time of writing, Octokit doesn't support the Checks API, but it does provide generic
-      # HTTP methods you can use:
+      # At the time of writing, Octokit doesn't support the Checks API, but 
+      # it does provide generic HTTP methods you can use:
       # https://developer.github.com/v3/checks/runs/#update-a-check-run
       updated_check_run = @installation_client.patch(
         "repos/#{@payload['repository']['full_name']}/check-runs/#{@payload['check_run']['id']}",
