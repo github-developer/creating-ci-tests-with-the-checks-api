@@ -83,7 +83,7 @@ class GHAapp < Sinatra::Application
 
     # Create a new check run with the status queued
     def create_check_run
-      # At the time of writing, Octokit does not support the Checks API, but 
+      # At the time of writing, Octokit does not support the Checks API, but
       # it does provide generic HTTP methods you can use:
       # https://developer.github.com/v3/checks/runs/#create-a-check-run
       check_run = @installation_client.post(
@@ -99,8 +99,8 @@ class GHAapp < Sinatra::Application
       )
 
       # You requested the creation of a check run from GitHub. Now, you'll wait
-      # to get confirmation from GitHub, in the form of a webhook, that it was 
-      # created before starting CI. Equivalently, a 201 response from 
+      # to get confirmation from GitHub, in the form of a webhook, that it was
+      # created before starting CI. Equivalently, a 201 response from
       # POST /repos/:owner/:repo/check-runs could also be used as confirmation.
     end
 
@@ -110,7 +110,7 @@ class GHAapp < Sinatra::Application
       # to 'in_progress' and run the CI process. When the CI finishes, you'll
       # update the check run status to 'completed' and add the CI results.
 
-      # At the time of writing, Octokit doesn't support the Checks API, but 
+      # At the time of writing, Octokit doesn't support the Checks API, but
       # it does provide generic HTTP methods you can use:
       # https://developer.github.com/v3/checks/runs/#update-a-check-run
       updated_check_run = @installation_client.patch(
@@ -139,6 +139,12 @@ class GHAapp < Sinatra::Application
       `rm -rf #{repository}`
       @output = JSON.parse @report
       annotations = []
+      # You can create a maximum of 50 annotations per request to the Checks
+      # API. To add more than 50 annotations, use the "Update a check run" API
+      # endpoint. This example code limits the number of annotations to 50.
+      # See https://developer.github.com/v3/checks/runs/#update-a-check-run
+      # for details.
+      max_annotations = 50
 
       # RuboCop reports the number of errors found in 'offense_count'
       if @output['summary']['offense_count'] == 0
@@ -153,6 +159,10 @@ class GHAapp < Sinatra::Application
 
           # Parse each offense to get details and location
           file['offenses'].each do |offense|
+            # Limit the number of annotations to 50
+            next if max_annotations == 0
+            max_annotations -= 1
+
             start_line   = offense['location']['start_line']
             end_line     = offense['location']['last_line']
             start_column = offense['location']['start_column']
