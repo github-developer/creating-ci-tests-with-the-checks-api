@@ -1,10 +1,10 @@
-This is an example GitHub App that creates a CI server that runs CI tests using the GitHub [Checks API](https://developer.github.com/v3/checks/). You can follow the "[Building a Checks API CI server](https://developer.github.com/apps/quickstart-guide/building-a-checks-api-ci-server)" Quickstart guide on developer.github.com to learn how to build the app code in `server.rb`.
+This is an example GitHub App that creates a CI server that runs CI tests using the GitHub [Checks API](https://developer.github.com/v3/checks/). You can follow the "[Building a Checks API CI server](https://developer.github.com/apps/quickstart-guide/creating-ci-tests-with-the-checks-api)" quickstart guide on developer.github.com to learn how to build the app code in `server.rb`.
 
 This project handles check run and check suite webhook events and uses the Octokit.rb library to make REST API calls. The CI test runs [RuboCop](https://rubocop.readthedocs.io/en/latest/) on all Ruby code in a repository and reports errors using the Checks API. This example project consists of two different servers:
 * `template_server.rb` (GitHub App template code)
 * `server.rb` (completed project)
 
-To learn how to set up a template GitHub App, follow the "[Configuring a GitHub App](https://developer.github.com/apps/quickstart-guide/configuring-ast-github-app)" Quickstart guide on developer.github.com.
+To learn how to set up a template GitHub App, follow the "[Setting up your development environment](https://developer.github.com/apps/quickstart-guide/configuring-ast-github-app)" quickstart guide on developer.github.com.
 
 ## Install
 
