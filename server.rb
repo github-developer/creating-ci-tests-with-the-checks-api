@@ -98,7 +98,7 @@ class GHAapp < Sinatra::Application
       # to 'in_progress' and run the CI process. When the CI finishes, you'll
       # update the check run status to 'completed' and add the CI results.
 
-      Octokit.update_check_run(@payload['repository']['full_name'], @payload['check_run']['id'], {
+      Octokit.update_check_run(@payload['repository']['full_name'], @payload['check_run']['id'],
         {
           name: 'Octo RuboCop',
           status: 'in_progress',
@@ -269,7 +269,7 @@ class GHAapp < Sinatra::Application
           iat: Time.now.to_i,
 
           # JWT expiration time (10 minute maximum)
-          exp: Time.now.to_i + (10 * 60),
+          exp: Time.now.to_i + (9 * 60),
 
           # Your GitHub App's identifier number
           iss: APP_IDENTIFIER
@@ -287,7 +287,6 @@ class GHAapp < Sinatra::Application
     def authenticate_installation(payload)
       @installation_id = payload['installation']['id']
       @installation_token = @app_client.create_app_installation_access_token(@installation_id)[:token]
-      @installation_client = Octokit::Client.new(bearer_token: @installation_token)
       Octokit.configure do |c|
         c.bearer_token = @installation_token
       end
