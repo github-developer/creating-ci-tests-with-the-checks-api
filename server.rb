@@ -83,8 +83,11 @@ class GHAapp < Sinatra::Application
 
     # Create a new check run with the status queued
     def create_check_run
+      # The name of your check run.
+      name = 'Octo RuboCop'
+      # The payload structure differs depending on whether a check run or a check suite event occurred.
       head_sha = @payload['check_run'].nil? ? @payload['check_suite']['head_sha'] : @payload['check_run']['head_sha']
-      Octokit.create_check_run(@payload['repository']['full_name'], 'Octo RuboCop', head_sha)
+      Octokit.create_check_run(@payload['repository']['full_name'], name, head_sha)
 
       # You requested the creation of a check run from GitHub. Now, you'll wait
       # to get confirmation from GitHub, in the form of a webhook, that it was
