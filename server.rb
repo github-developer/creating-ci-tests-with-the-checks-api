@@ -263,7 +263,7 @@ class GHAapp < Sinatra::Application
           iat: Time.now.to_i,
 
           # JWT expiration time (10 minute maximum)
-          exp: Time.now.to_i + (9 * 60),
+          exp: Time.now.to_i + (10 * 60),
 
           # Your GitHub App's identifier number
           iss: APP_IDENTIFIER
@@ -301,7 +301,7 @@ class GHAapp < Sinatra::Application
       their_signature_header = request.env['HTTP_X_HUB_SIGNATURE'] || 'sha1='
       method, their_digest = their_signature_header.split('=')
       our_digest = OpenSSL::HMAC.hexdigest(method, WEBHOOK_SECRET, @payload_raw)
-      # halt 401 unless their_digest == our_digest
+      halt 401 unless their_digest == our_digest
 
       # The X-GITHUB-EVENT header provides the name of the event.
       # The action value indicates the which action triggered the event.
