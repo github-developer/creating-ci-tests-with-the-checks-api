@@ -83,7 +83,7 @@ class GHAapp < Sinatra::Application
 
     # Create a new check run with the status queued
     def create_check_run
-      head_sha =  @payload['check_run'].nil? ? @payload['check_suite']['head_sha'] : @payload['check_run']['head_sha']
+      head_sha = @payload['check_run'].nil? ? @payload['check_suite']['head_sha'] : @payload['check_run']['head_sha']
       Octokit.create_check_run(@payload['repository']['full_name'], 'Octo RuboCop', head_sha)
 
       # You requested the creation of a check run from GitHub. Now, you'll wait
@@ -97,14 +97,8 @@ class GHAapp < Sinatra::Application
       # Once the check run is created, you'll update the status of the check run
       # to 'in_progress' and run the CI process. When the CI finishes, you'll
       # update the check run status to 'completed' and add the CI results.
-
-      Octokit.update_check_run(@payload['repository']['full_name'], @payload['check_run']['id'],
-        {
-          name: 'Octo RuboCop',
-          status: 'in_progress',
-          started_at: Time.now.utc.iso8601
-        }
-      )
+      Octokit.update_check_run(@payload['repository']['full_name'], @payload['check_run']['id'], name: 'Octo RuboCop',
+        status: 'in_progress', started_at: Time.now.utc.iso8601)
 
       # ***** RUN A CI TEST *****
       # Ideally this would be performed async, so you could return immediately.

@@ -50,7 +50,7 @@ DEPENDENCIES
   dotenv
   git
   jwt (~> 2.1)
-  octokit (~> 4.0)
+  octokit (~> 4.14)
   rubocop
   sinatra (~> 2.0)
 
