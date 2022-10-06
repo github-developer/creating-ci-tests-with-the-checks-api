@@ -141,6 +141,21 @@ class GHAapp < Sinatra::Application
       logger.debug "----    action #{@payload['action']}" unless @payload['action'].nil?
     end
 
+    # Create a new check run with the status queued
+    def create_check_run
+      @installation_client.create_check_run(
+        # [String, Integer, Hash, Octokit Repository object] A GitHub repository.
+        @payload['repository']['full_name'],
+        # [String] The name of your check run.
+        'Octo RuboCop',
+        # [String] The SHA of the commit to check 
+        # The payload structure differs depending on whether a check run or a check suite event occurred.
+        @payload['check_run'].nil? ? @payload['check_suite']['head_sha'] : @payload['check_run']['head_sha'],
+        # [Hash] 'Accept' header option, to avoid a warning about the API not being ready for production use.
+        accept: 'application/vnd.github+json'
+      )
+    end
+
   end
 
   # Finally some logic to let us run this server directly from the command line,
