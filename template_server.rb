@@ -61,7 +61,14 @@ class GHAapp < Sinatra::Application
     # # # # # # # # # # # #
     # ADD YOUR CODE HERE  #
     # # # # # # # # # # # #
-
+    # Get the event type from the HTTP_X_GITHUB_EVENT header
+    case request.env['HTTP_X_GITHUB_EVENT']
+    when 'check_suite'
+      # A new check_suite has been created. Create a new check run with status queued
+      if @payload['action'] == 'requested' || @payload['action'] == 'rerequested'
+        create_check_run
+      end
+    end
     200 # success status
   end
 
