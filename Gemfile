@@ -1,8 +1,10 @@
 source 'http://rubygems.org'
 
-gem 'sinatra', '~> 2.0'
+gem 'sinatra', '~> 2.2'
 gem 'jwt', '~> 2.1'
-gem 'octokit', '~> 4.0'
+gem 'octokit', '~> 4.2'
 gem 'rubocop'
 gem 'dotenv'
 gem 'git'
+gem 'faraday-retry'
+gem 'puma'
