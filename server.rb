@@ -222,6 +222,7 @@ class GHAapp < Sinatra::Application
       full_repo_name = @payload['repository']['full_name']
       repository     = @payload['repository']['name']
       head_branch    = @payload['check_run']['check_suite']['head_branch']
+      default_branch = @payload['repository']['default_branch']
 
       if (@payload['requested_action']['identifier'] == 'fix_rubocop_notices')
         clone_repository(full_repo_name, repository, head_branch)
@@ -257,7 +258,7 @@ class GHAapp < Sinatra::Application
       @git = Git.clone("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", repository)
       pwd = Dir.getwd()
       Dir.chdir(repository)
-      @git.pull
+      @git.pull("https://x-access-token:#{@installation_token.to_s}@github.com/#{full_repo_name}.git", branch=default_branch)
       @git.checkout(ref)
       Dir.chdir(pwd)
     end
